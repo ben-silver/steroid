@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8' />
+<link href='../fullcalendar.min.css' rel='stylesheet' />
+<link href='../fullcalendar.print.min.css' rel='stylesheet' media='print' />
+<link rel="stylesheet" href="../lib/jquery-ui-1.12.1.custom/jquery-ui.css">
+<script src='../lib/moment.min.js'></script>
+<script src='../lib/jquery.min.js'></script>
+<script src='../lib/jquery-ui.min.js'></script>
+<script src='../fullcalendar.min.js'></script>
+<script>
+
+	$(document).ready(function() {
+		var idIndex=0;
+		var pmVisible = false;
+		function addRange(startDate, dayst, dose){
+			var i = 0;
+			var eventData;
+			var currentDate = startDate;
+			var dayDelta=1;
+			dayst;
+			for(i=0; i < dayst; i++){
+				eventData = {
+					title: dose,
+					start: currentDate,
+					//end: moment(endDate),
+					allDay: true,
+					id: idIndex++
+				};
+				$('#calendar').fullCalendar('renderEvent', eventData, true); 
+				currentDate.add(1,'days');
+			}
+			
+			
+		}
+		$('#dialog').dialog({
+			autoOpen: false,
+			buttons: {
+				"Submit": function () {
+					if(document.getElementById('daysOrDateDate').checked){
+						dayDelta = parseInt(moment($('#datepickerEnd').val()).diff(moment($('#datepickerStart').val()),'days'))+1;
+					}
+					else{
+						dayDelta = parseInt($('#numberDays').val());
+					}
+					addRange(moment($('#datepickerStart').val()),dayDelta,"<b>AM: </b>"+$('#amDose').val()+" mg"); 
+					if(document.getElementById("needPM").checked){
+						addRange(moment($('#datepickerStart').val()),dayDelta,"<b>PM: </b>"+ $('#pmDose').val()+" mg");
+					}
+					$(this).dialog("close");
+					document.getElementById("myForm").reset();
+				},
+				Cancel: function() {
+					$(this).dialog("close");
+				}
+			},
+			modal: true
+		});
+
+		$('#dialogName').dialog({
+			autoOpen: false,
+			buttons: {
+				"Submit": function() {
+					var calName = $('#calTitle').val();
+    				document.getElementById('PatientName').innerHTML = "";
+    				if(calName){
+    					$('#PatientName').append("<p>"+calName+"</p>");
+					}
+					$(this).dialog("close");
+				},
+				/*"Cancel": function(){
+					$(this).dialog("close");
+				}*/
+			},
+			modal: true
+		});
+		$("#datepickerStart").datepicker({
+			changeMonth: true,
+			changeYear: true,
+			showOn: "focus"
+		});
+		$("#datepickerEnd").datepicker({
+			changeMonth: true,
+			changeYear: true,
+			showOn: "focus"
+		});
+		$('#calendar').fullCalendar({
+		    customButtons: {
+   				generator: {
+        			text: 'Generate Calendar',
+        			click: function() {
+            			//alert('clicked the custom button!');
+            			$("#dialog").dialog("open");
+
+        			}
+    			},
+    			patient: {
+    				text: 'Patient Name',
+    				click: function() {
+    					/*var calName = prompt('Enter Patient Name');
+    					document.getElementById('PatientName').innerHTML = "";
+    					if(calName){
+    						$('#PatientName').append("<p>"+calName+"</p>");
+						}*/
+						$('#dialogName').dialog('open');
+    				}
+    			}
+			},
+			header: {
+				left: 'generator patient',//'prev,next today',
+				center: 'title',
+				right: 'prev,next today'//'month,agendaWeek,agendaDay'
+			},
+			navLinks: true, // can click day/week names to navigate views
+			selectable: true,
+			selectHelper: true,
+			select: function(start, end) {
+				start = moment(start).format('l');
+				end = moment(end).subtract(1, 'days').format('l');
+				$('#calendar').fullCalendar('unselect');
+				document.getElementById('daysOrDateDate').checked = true;
+				document.getElementById('daysHidden').style.display = "none";
+				document.getElementById('endHidden').style.display = "block";
+				$('#datepickerStart').datepicker('setDate', start);
+				$('#datepickerEnd').datepicker('setDate', end);
+				$("#dialog").dialog("open");
+
+			},
+			editable: true,
+			eventLimit: true, // allow "more" link when too many events
+			events: [],
+			eventColor: 'PowderBlue',
+			eventRender: function (event, element) {
+    			element.find('.fc-title').html(event.title);
+    		},
+			eventTextColor: 'Black',
+			eventClick: function(calEvent, jsEvent, view) {
+				$('#calendar').fullCalendar('removeEvents',calEvent.id);
+
+			}
+
+		});
+		$('#needPM').click(function(){
+			pmVisible = document.getElementById('needPM').checked
+			if(pmVisible){
+				document.getElementById('pmHidden').style.display = "inline"
+			}
+			else{
+				document.getElementById('pmHidden').style.display = "none"
+			}
+		});
+		$('#daysOrDateDays').click(function(){
+			document.getElementById('daysHidden').style.display = "block";
+			document.getElementById('endHidden').style.display = "none";
+		})
+		$('#daysOrDateDate').click(function(){
+			document.getElementById('daysHidden').style.display = "none";
+			document.getElementById('endHidden').style.display = "block";
+		})
+
+	});
+
+</script>
+<style>
+
+	body {
+		margin: 40px 10px;
+		padding: 0;
+		font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+		font-size: 14px;
+	
+}
+	#calendar {
+		max-width: 900px;
+		margin: 0 auto;
+	}
+	#pmHidden{
+		display: none;
+	}
+	#endHidden{
+		display: none;
+	}
+	#daysHidden{
+		display: 'block';
+	}
+	#PatientName{
+		text-align: center;
+	}
+
+</style>
+</head>
+<body>
+	<h1><div id='PatientName'></div></h1>
+	<div id='calendar'></div>
+	<div id="dialog" title="Generator">
+		<form id = 'myForm'>
+			<p>AM Dose:<br> <input type="text" id="amDose"> mg</p>
+			PM Dose:<input type="checkbox" id="needPM"><br>
+			<div id='pmHidden'>
+				<input type="text" id="pmDose"> mg<br>
+			</div>
+			<p>Starting Date:<br> <input type="text" id="datepickerStart"></p>
+			<div id='endHidden'>
+				<p>Ending Date:<br> <input type="text" id="datepickerEnd"></p>
+			</div>
+			<div id='daysHidden'>
+				<p>Days:<br> <input type="number" min ='1' id="numberDays"></p>
+			</div>
+			<input type="radio" id="daysOrDateDays" name="dayDate" value="daysForm" checked>Days
+			<input type="radio" id="daysOrDateDate" name="dayDate" value="dateForm">Date
+
+		</form>
+	</div>
+	<div id="dialogName" title="Patient Name">
+		<form id = 'myForm2'>
+			<p>Patient Name:<br> <input type="text" id="calTitle"></p>
+		</form>
+	</div>
+</body>
+</html>
